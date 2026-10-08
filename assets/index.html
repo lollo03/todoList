@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="98.css" />
+    <title>TODO List</title>
+</head>
+
+<body>
+    <h1>TODO List</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Completed</th>
+                <th>Date</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="task-table-body">
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5">
+                    <form class="add-task-form">
+                        <input name="title" type="text" class="task-title" placeholder="Title" required>
+                        <input name="description" type="text" class="task-description" placeholder="Description"
+                            required>
+                        <button type="submit" class="tasks-submit">Add Task</button>
+                    </form>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+</body>
+
+</html>
+
+<script type="module">
+    popolateTable();
+
+    const form = document.querySelector(".add-task-form");
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        addTask();
+    });
+
+    // Functions
+    async function getTasks() {
+        const url = "/tasks";
+        const settings = {
+            headers: {
+                "Accept": "application/json",
+            },
+        };
+        try {
+            const response = await fetch(url, settings);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log(result);
+            return result;
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    async function popolateTable() {
+        const tasks = await getTasks();
+        const tableBody = document.getElementById("task-table-body");
+        tableBody.innerHTML = ""; // Clear existing rows
+        tasks.forEach(task => {
+            const row = tableBody.appendChild(document.createElement("tr"));
+            row.appendChild(document.createElement("td")).textContent = task.ID;
+            row.appendChild(document.createElement("td")).textContent = task.Title;
+            row.appendChild(document.createElement("td")).textContent = task.Description;
+            const completedCell = row.appendChild(document.createElement("td"));
+            const date = new Date(Date.parse(task.Date));
+            row.appendChild(document.createElement("td")).textContent = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = task.Completed;
+            checkbox.onchange = () => updateTask(task.ID, checkbox.checked);
+            completedCell.appendChild(checkbox);
+            const deleteCell = row.appendChild(document.createElement("td"));
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.onclick = () => deleteTask(task.ID);
+            deleteCell.appendChild(deleteButton);
+        });
+    }
+
+    async function updateTask(id, completed) {
+        const url = `/tasks?id=${id}&completed=${completed}`;
+        const settings = {
+            method: "PUT",
+        };
+        try {
+            const response = await fetch(url, settings);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            popolateTable();
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    async function deleteTask(id) {
+        const url = `/tasks?id=${id}`;
+        const settings = {
+            method: "DELETE",
+        };
+        try {
+            const response = await fetch(url, settings);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            popolateTable();
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    async function addTask() {
+        const formData = new FormData(form);
+        try {
+            const response = await fetch("/tasks", {
+                method: "POST",
+                body: formData,
+            });
+            await response.json().then((data) => {
+                console.log(data);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+
+        setTimeout(() => {
+            popolateTable();
+        }, 100);
+    }
+
+</script>
+
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th,
+    td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .add-task-form {
+        display: flex;
+        gap: 8px;
+    }
+
+    .task-title,
+    .task-description {
+        flex: 3;
+        padding: 8px;
+    }
+
+    .tasks-submit {
+        flex: 1;
+        padding: 8px 16px;
+    }
+</style>
