@@ -7,6 +7,10 @@ UPX_FLAGS   ?= --lzma
 PORT        ?= 8080
 DB_NAME     ?= todoList.db
 
+IMAGE       ?= todoList
+IMAGE_TAG   ?= latest
+DOCKER      ?= docker
+
 GOOS        ?=
 GOARCH      ?=
 GOARM       ?=
@@ -27,7 +31,7 @@ endif
 export GOOS GOARCH GOARM CC CGO_ENABLED CGO_CFLAGS
 
 .DEFAULT_GOAL := build
-.PHONY: build build-debug pack run clean fmt vet tidy check help
+.PHONY: build build-debug pack run clean fmt vet tidy check help docker docker-run
 
 build:
 	$(GO) build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(BINARY) $(MAIN)
@@ -42,6 +46,12 @@ pack: build
 
 run: build
 	PORT=$(PORT) DB_NAME=$(DB_NAME) ./$(BINARY)
+
+docker:
+	$(DOCKER) build -t $(IMAGE):$(IMAGE_TAG) .
+
+docker-run: docker
+	$(DOCKER) run --rm -p $(PORT):8080 -v $(IMAGE)-data:/app/data $(IMAGE):$(IMAGE_TAG)
 
 clean:
 	rm -f $(BINARY)

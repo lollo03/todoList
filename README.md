@@ -99,10 +99,24 @@ curl -X DELETE 'localhost:8080/tasks?id=1'
 
 Via environment variables
 
-| NAME    | DESCRIPTION    | DEFAULT     |
-|---------|----------------|-------------|
-| PORT    | Webserver port | 8080        |
-| DB_NAME | Sqlite DB name | todolist.db |
+| NAME    | DESCRIPTION                                        | DEFAULT       |
+|---------|----------------------------------------------------|---------------|
+| PORT    | Webserver port                                     | 8080          |
+| DB_NAME | Sqlite DB name                                     | todoList.db   |
+| TZ      | Timezone used for task timestamps (IANA name)      | system / UTC  |
+
+## Usage
+
+### Run locally
+
+```sh
+PORT=9000 DB_NAME=tasks.db ./todolist
+```
+### Docker
+
+```sh
+docker run --rm -p 8080:8080 ghcr.io/<owner>/<repo>:latest
+```
 
 ## License
 
