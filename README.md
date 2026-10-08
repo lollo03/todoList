@@ -115,7 +115,7 @@ PORT=9000 DB_NAME=tasks.db ./todolist
 ### Docker
 
 ```sh
-docker run --rm -p 8080:8080 ghcr.io/<owner>/<repo>:latest
+docker run --rm -p 8080:8080 ghcr.io/lollo03/todoList:latest
 ```
 
 ## License
