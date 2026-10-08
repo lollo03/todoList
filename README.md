@@ -8,7 +8,7 @@
 ## HTTP endpoints
 
 - `/` serves the index webpage
-- `/ready` replies with `OK`
+- `/readyz` replies with `OK`
 - GET `/tasks` get tasks
 - POST `/tasks` create a task, BODY: `title` `description`
 - PUT `/tasks` update a task, QUERY: `id` `completed`
@@ -19,7 +19,7 @@
 | METHOD   | PATH     | DESCRIPTION                     | SUCCESS         |
 |----------|----------|---------------------------------|-----------------|
 | GET      | `/`      | Serve the index web page        | `200 text/html` |
-| GET      | `/ready` | Liveness probe                  | `200` `OK`      |
+| GET      | `/readyz`| Liveness probe                  | `200` `OK`      |
 | GET      | `/tasks` | List tasks                      | `200`           |
 | POST     | `/tasks` | Create a task                   | `201`           |
 | PUT      | `/tasks` | Update a task's completed state | `200`           |
@@ -88,7 +88,7 @@ Error responses carry the matching status code and a JSON body:
 ### Examples
 
 ```sh
-curl localhost:8080/ready
+curl localhost:8080/readyz
 curl -H 'Accept: application/json' localhost:8080/tasks
 curl -X POST -F title='Buy milk' -F description='2 liters' localhost:8080/tasks
 curl -X PUT 'localhost:8080/tasks?id=1&completed=true'

@@ -1,4 +1,4 @@
-BINARY      := dist/todoList
+BINARY      ?= dist/todoList
 MAIN        := todoList.go
 GO          ?= go
 UPX_BIN     ?= upx
@@ -7,20 +7,33 @@ UPX_FLAGS   ?= --lzma
 PORT        ?= 8080
 DB_NAME     ?= todoList.db
 
+GOOS        ?=
+GOARCH      ?=
+GOARM       ?=
+CC          ?=
+
 CGO_ENABLED ?= 1
 CGO_CFLAGS  ?= -Os
 
+STATIC      ?= 0
+
 GOFLAGS     := -trimpath
 LDFLAGS     := -s -w -buildid=
+
+ifeq ($(STATIC),1)
+LDFLAGS += -linkmode external -extldflags -static
+endif
+
+export GOOS GOARCH GOARM CC CGO_ENABLED CGO_CFLAGS
 
 .DEFAULT_GOAL := build
 .PHONY: build build-debug pack run clean fmt vet tidy check help
 
 build:
-	CGO_ENABLED=$(CGO_ENABLED) CGO_CFLAGS="$(CGO_CFLAGS)" $(GO) build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(BINARY) $(MAIN)
+	$(GO) build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(BINARY) $(MAIN)
 
 build-debug:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY) $(MAIN)
+	$(GO) build -o $(BINARY) $(MAIN)
 
 pack: build
 	@command -v $(UPX_BIN) >/dev/null 2>&1 || { echo "upx not found"; exit 1; }

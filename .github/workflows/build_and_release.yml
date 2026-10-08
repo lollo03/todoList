@@ -1,47 +1,95 @@
 name: Build and Release
+
 on:
   push:
+    branches:
+      - main
     tags:
       - v*
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
+    name: build ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-amd64
+            goos: linux
+            goarch: amd64
+            cc: gcc
+            binary: dist/todoList-linux-amd64
+            static: 1
+            apt: ""
+          - name: linux-arm64
+            goos: linux
+            goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+            binary: dist/todoList-linux-arm64
+            static: 1
+            apt: gcc-aarch64-linux-gnu
+          - name: linux-armv7
+            goos: linux
+            goarch: arm
+            goarm: 7
+            cc: arm-linux-gnueabihf-gcc
+            binary: dist/todoList-linux-armv7
+            static: 1
+            apt: gcc-arm-linux-gnueabihf
+          - name: windows-amd64
+            goos: windows
+            goarch: amd64
+            cc: x86_64-w64-mingw32-gcc
+            binary: dist/todoList-windows-amd64.exe
+            static: 0
+            apt: gcc-mingw-w64-x86-64
     steps:
       - uses: actions/checkout@v6
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.27
-      - name: Install UPX
+          go-version-file: go.mod
+          cache: true
+      - name: Install cross toolchain and UPX
         run: |
           sudo apt-get update
-          sudo apt-get install -y upx
+          sudo apt-get install -y gcc ${{ matrix.apt }}
+          sudo apt-get install -y upx-ucl || sudo apt-get install -y upx
       - name: Build and pack
-        run: |
-          make pack
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CC: ${{ matrix.cc }}
+        run: make pack BINARY=${{ matrix.binary }} STATIC=${{ matrix.static }}
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: todoList
+          name: ${{ matrix.name }}
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
+
   release:
+    name: release
     needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Download artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          name: todoList
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          files: dist/*
+          generate_release_notes: true
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v3
-        
